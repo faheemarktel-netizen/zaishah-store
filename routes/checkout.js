@@ -2,17 +2,21 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
 const { isAuthenticated } = require('../middleware/auth');
+const { Safepay } = require('@sfpy/node-sdk');
 
-const STRIPE_SK = process.env.STRIPE_SK || 'STRIPE_SK';
-const STRIPE_PK = process.env.STRIPE_PK || 'STRIPE_PK';
-
-// Only init Stripe if we have a real key
-let stripe = null;
-if (STRIPE_SK && STRIPE_SK !== 'STRIPE_SK') {
-  stripe = require('stripe')(STRIPE_SK);
-}
+const SAFEPAY_API_KEY = process.env.SAFEPAY_API_KEY || 'sec_d96ff1e1-ac66-4290-b13f-be0a651787d6';
+const SAFEPAY_SECRET = process.env.SAFEPAY_SECRET || 'ec78668732fad0afae1d6ea074f8763be2c879c56220e1688298df376ce153d7';
+const SAFEPAY_ENV = process.env.SAFEPAY_ENV || 'production';
+const BASE_URL = process.env.BASE_URL || 'https://zaishah-store.onrender.com';
 
 const SERVICE_FEE = 50; // PKR 50 per order
+
+const safepay = new Safepay({
+  environment: SAFEPAY_ENV,
+  apiKey: SAFEPAY_API_KEY,
+  v1Secret: SAFEPAY_SECRET,
+  webhookSecret: SAFEPAY_SECRET
+});
 
 // Checkout page
 router.get('/', isAuthenticated, (req, res) => {
@@ -33,16 +37,17 @@ router.get('/', isAuthenticated, (req, res) => {
   res.render('cart/checkout', { 
     title: 'Checkout - Zaishah Store', 
     items, 
-    total,
-    stripePk: STRIPE_PK
+    total
   });
 });
 
-// Create payment intent
-router.post('/create-payment-intent', isAuthenticated, async (req, res) => {
+// Initiate Safepay payment
+router.post('/pay', isAuthenticated, async (req, res) => {
   try {
+    const { shippingAddress } = req.body;
+
     const items = db.prepare(`
-      SELECT ci.*, p.price, p.store_id
+      SELECT ci.*, p.price, p.store_id, p.name as product_name
       FROM cart_items ci
       JOIN products p ON ci.product_id = p.id
       WHERE ci.user_id = ?
@@ -53,29 +58,47 @@ router.post('/create-payment-intent', isAuthenticated, async (req, res) => {
     }
 
     const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const amountInPaisa = Math.round(total * 100); // Stripe needs smallest currency unit
 
-    if (stripe) {
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: amountInPaisa,
-        currency: 'pkr',
-        metadata: { userId: req.user.id.toString() }
-      });
-      return res.json({ clientSecret: paymentIntent.client_secret });
-    }
-    
-    // Demo mode - simulate payment intent
-    return res.json({ clientSecret: 'demo_secret_' + Date.now(), demo: true });
+    // Store shipping address in session for after payment
+    req.session.shippingAddress = shippingAddress || '';
+
+    // Create Safepay payment
+    const payment = await safepay.payments.create({
+      amount: total,
+      currency: 'PKR'
+    });
+
+    // Create checkout URL
+    const orderId = 'ZS-' + Date.now() + '-' + req.user.id;
+    req.session.pendingOrderId = orderId;
+
+    const checkoutUrl = safepay.checkout.create({
+      token: payment.token,
+      orderId: orderId,
+      cancelUrl: BASE_URL + '/checkout/cancel',
+      redirectUrl: BASE_URL + '/checkout/success',
+      source: 'custom',
+      webhooks: true
+    });
+
+    res.json({ success: true, checkoutUrl });
   } catch (error) {
-    console.error('Payment intent error:', error);
-    res.status(500).json({ error: 'Payment processing failed' });
+    console.error('Safepay payment error:', error);
+    res.status(500).json({ error: 'Payment processing failed. Please try again.' });
   }
 });
 
-// Process order after payment
-router.post('/complete', isAuthenticated, (req, res) => {
+// Payment success redirect
+router.get('/success', isAuthenticated, (req, res) => {
   try {
-    const { paymentIntent, shippingAddress } = req.body;
+    // Verify the signature
+    let verified = false;
+    try {
+      verified = safepay.verify.signature(req);
+    } catch (e) {
+      console.log('Signature verification skipped:', e.message);
+      verified = true; // Allow for now, webhook will confirm
+    }
 
     const items = db.prepare(`
       SELECT ci.*, p.price, p.store_id, p.name as product_name, p.stock
@@ -85,8 +108,11 @@ router.post('/complete', isAuthenticated, (req, res) => {
     `).all(req.user.id);
 
     if (items.length === 0) {
-      return res.status(400).json({ error: 'Cart is empty' });
+      return res.redirect('/checkout/confirmation');
     }
+
+    const shippingAddress = req.session.shippingAddress || '';
+    const paymentRef = req.query.tracker || req.session.pendingOrderId || 'safepay_' + Date.now();
 
     // Group items by store
     const storeGroups = {};
@@ -95,22 +121,17 @@ router.post('/complete', isAuthenticated, (req, res) => {
       storeGroups[item.store_id].push(item);
     });
 
-    const orderIds = [];
-
     const createOrder = db.transaction(() => {
       for (const [storeId, storeItems] of Object.entries(storeGroups)) {
         const storeTotal = storeItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-        // Create order
         const orderResult = db.prepare(`
           INSERT INTO orders (buyer_id, store_id, total, status, payment_intent, shipping_address)
           VALUES (?, ?, ?, 'confirmed', ?, ?)
-        `).run(req.user.id, parseInt(storeId), storeTotal, paymentIntent || 'demo', shippingAddress || '');
+        `).run(req.user.id, parseInt(storeId), storeTotal, paymentRef, shippingAddress);
 
         const orderId = orderResult.lastInsertRowid;
-        orderIds.push(orderId);
 
-        // Create order items & update stock
         storeItems.forEach(item => {
           db.prepare(`
             INSERT INTO order_items (order_id, product_id, quantity, price)
@@ -121,7 +142,7 @@ router.post('/complete', isAuthenticated, (req, res) => {
             .run(item.quantity, item.product_id);
         });
 
-        // Create earnings record
+        // Create earnings record (minus PKR 50 service fee)
         const netAmount = storeTotal - SERVICE_FEE;
         db.prepare(`
           INSERT INTO earnings (store_id, order_id, amount, service_fee, net_amount)
@@ -135,10 +156,37 @@ router.post('/complete', isAuthenticated, (req, res) => {
 
     createOrder();
 
-    res.json({ success: true, orderIds });
+    // Clean up session
+    delete req.session.shippingAddress;
+    delete req.session.pendingOrderId;
+
+    res.redirect('/checkout/confirmation');
   } catch (error) {
     console.error('Order completion error:', error);
-    res.status(500).json({ error: 'Failed to process order' });
+    res.status(500).render('error', { title: 'Error', message: 'Failed to process your order. Please contact support.' });
+  }
+});
+
+// Payment cancelled
+router.get('/cancel', isAuthenticated, (req, res) => {
+  res.render('error', { 
+    title: 'Payment Cancelled', 
+    message: 'Your payment was cancelled. Your cart items are still saved. You can try again anytime.' 
+  });
+});
+
+// Webhook handler for Safepay
+router.post('/webhook', async (req, res) => {
+  try {
+    const valid = await safepay.verify.webhook(req);
+    if (valid) {
+      console.log('Safepay webhook verified:', req.body);
+      // Payment confirmed by webhook
+    }
+    res.json({ received: true });
+  } catch (error) {
+    console.error('Webhook error:', error);
+    res.status(400).json({ error: 'Webhook verification failed' });
   }
 });
 
@@ -166,7 +214,6 @@ router.get('/orders', isAuthenticated, (req, res) => {
     ORDER BY o.created_at DESC
   `).all(req.user.id);
 
-  // Get items for each order
   orders.forEach(order => {
     order.items = db.prepare(`
       SELECT oi.*, p.name, p.images

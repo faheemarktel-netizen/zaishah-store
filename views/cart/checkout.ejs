@@ -1,130 +1,104 @@
 <%- include('../partials/header') %>
-<div class="main-content">
-  <div class="container">
-    <h2 style="margin-bottom: 1.5rem;">💳 Checkout</h2>
 
-    <div class="no-cod-notice">
-      <span class="icon">💳</span>
-      <div><strong>Card Payment Only</strong> — We accept Visa, Mastercard, and other major cards via Stripe. No Cash on Delivery.</div>
+<div class="container" style="max-width: 800px; margin: 2rem auto; padding: 0 1rem;">
+  <h2 style="margin-bottom: 1.5rem;">💳 Checkout</h2>
+
+  <div class="card mb-2">
+    <div class="card-header">Order Summary</div>
+    <div class="card-body" style="padding: 0;">
+      <table>
+        <thead>
+          <tr><th>Product</th><th>Store</th><th>Qty</th><th>Price</th><th>Subtotal</th></tr>
+        </thead>
+        <tbody>
+          <% items.forEach(item => { %>
+            <tr>
+              <td><%= item.name %></td>
+              <td><%= item.store_name %></td>
+              <td><%= item.quantity %></td>
+              <td>PKR <%= item.price.toLocaleString() %></td>
+              <td>PKR <%= (item.price * item.quantity).toLocaleString() %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" style="text-align: right; font-weight: 700;">Total:</td>
+            <td style="font-weight: 700; color: var(--gold-dark);">PKR <%= total.toLocaleString() %></td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
+  </div>
 
-    <div class="cart-layout">
-      <div>
-        <div class="card mb-2">
-          <div class="card-header">📦 Shipping Address</div>
-          <div class="card-body">
-            <div class="form-group">
-              <label>Full Name</label>
-              <input type="text" id="fullName" class="form-control" value="<%= user.name %>" required>
-            </div>
-            <div class="form-group">
-              <label>Address</label>
-              <textarea id="address" class="form-control" rows="3" placeholder="Street address, city, province..." required></textarea>
-            </div>
-            <div class="form-group">
-              <label>Phone Number</label>
-              <input type="tel" id="phone" class="form-control" placeholder="03XX-XXXXXXX" required>
-            </div>
-          </div>
-        </div>
+  <div class="card mb-2">
+    <div class="card-header">📍 Shipping Address</div>
+    <div class="card-body">
+      <textarea id="shipping-address" class="form-control" rows="3" placeholder="Enter your full shipping address..." style="width: 100%; padding: 0.8rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; resize: vertical;"></textarea>
+    </div>
+  </div>
 
-        <div class="card">
-          <div class="card-header">💳 Card Payment</div>
-          <div class="card-body">
-            <div id="card-element" style="padding: 1rem; border: 2px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 1rem;">
-              <!-- Stripe card element mounts here -->
-              <p style="color: var(--text-light); font-size: 0.9rem;">
-                <% if (stripePk === 'STRIPE_PK') { %>
-                  ⚠️ Stripe not configured. Using demo mode — orders will be placed without real payment.
-                <% } else { %>
-                  Enter your card details below:
-                <% } %>
-              </p>
-            </div>
-            <div id="card-errors" style="color: var(--danger); font-size: 0.85rem; margin-bottom: 1rem;"></div>
-          </div>
-        </div>
-      </div>
+  <div class="card mb-2">
+    <div class="card-header">💳 Payment Method</div>
+    <div class="card-body" style="text-align: center;">
+      <p style="margin-bottom: 1rem; color: var(--text-light);">Secure payment powered by <strong>Safepay</strong></p>
+      <p style="margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">Accepts Visa, Mastercard & local debit/credit cards</p>
+      
+      <button id="pay-btn" onclick="initiatePayment()" class="btn btn-gold btn-lg" style="min-width: 250px;">
+        Pay PKR <%= total.toLocaleString() %> →
+      </button>
 
-      <div class="cart-summary">
-        <h3>Order Summary</h3>
-        <% items.forEach(item => { %>
-          <div class="summary-row">
-            <span><%= item.name %> ×<%= item.quantity %></span>
-            <span>PKR <%= (item.price * item.quantity).toLocaleString() %></span>
-          </div>
-        <% }); %>
-        <div class="summary-row">
-          <span>Shipping</span>
-          <span style="color: var(--success);">Free</span>
-        </div>
-        <div class="summary-row total">
-          <span>Total</span>
-          <span>PKR <%= total.toLocaleString() %></span>
-        </div>
-        
-        <button class="btn btn-gold btn-block btn-lg" style="margin-top: 1.5rem;" onclick="placeOrder()" id="payBtn">
-          💳 Pay PKR <%= total.toLocaleString() %>
-        </button>
-        <p style="text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">🔒 Secured by Stripe</p>
+      <div id="payment-error" style="display: none; margin-top: 1rem; color: var(--danger); font-size: 0.9rem;"></div>
+      <div id="payment-loading" style="display: none; margin-top: 1rem; color: var(--text-light);">
+        ⏳ Preparing secure payment...
       </div>
     </div>
   </div>
+
+  <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem;">
+    🔒 Your payment is secure and encrypted. No card details are stored on our servers.
+  </p>
 </div>
 
 <script>
-async function placeOrder() {
-  const btn = document.getElementById('payBtn');
-  const address = document.getElementById('address').value;
-  const phone = document.getElementById('phone').value;
-  const fullName = document.getElementById('fullName').value;
+function initiatePayment() {
+  const btn = document.getElementById('pay-btn');
+  const loading = document.getElementById('payment-loading');
+  const errorDiv = document.getElementById('payment-error');
+  const address = document.getElementById('shipping-address').value;
 
-  if (!address || !phone || !fullName) {
-    alert('Please fill in all shipping details.');
+  if (!address.trim()) {
+    errorDiv.textContent = 'Please enter your shipping address.';
+    errorDiv.style.display = 'block';
     return;
   }
 
   btn.disabled = true;
   btn.textContent = 'Processing...';
+  loading.style.display = 'block';
+  errorDiv.style.display = 'none';
 
-  try {
-    // Create payment intent
-    const piRes = await fetch('/checkout/create-payment-intent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    const piData = await piRes.json();
-
-    if (piData.error) {
-      alert(piData.error);
-      btn.disabled = false;
-      btn.textContent = '💳 Pay';
-      return;
-    }
-
-    // Complete order
-    const orderRes = await fetch('/checkout/complete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        paymentIntent: piData.clientSecret,
-        shippingAddress: fullName + '\n' + address + '\n' + phone
-      })
-    });
-    const orderData = await orderRes.json();
-
-    if (orderData.success) {
-      window.location.href = '/checkout/confirmation';
+  fetch('/checkout/pay', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ shippingAddress: address })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success && data.checkoutUrl) {
+      window.location.href = data.checkoutUrl;
     } else {
-      alert(orderData.error || 'Order failed');
-      btn.disabled = false;
-      btn.textContent = '💳 Pay';
+      throw new Error(data.error || 'Payment failed');
     }
-  } catch (err) {
-    alert('Payment failed. Please try again.');
+  })
+  .catch(err => {
     btn.disabled = false;
-    btn.textContent = '💳 Pay';
-  }
+    btn.textContent = 'Pay PKR <%= total.toLocaleString() %> →';
+    loading.style.display = 'none';
+    errorDiv.textContent = err.message || 'Payment failed. Please try again.';
+    errorDiv.style.display = 'block';
+  });
 }
 </script>
+
 <%- include('../partials/footer') %>
