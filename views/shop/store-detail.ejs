@@ -1,0 +1,51 @@
+<%- include('../partials/header') %>
+<div class="main-content">
+  <div class="container">
+    <div style="text-align: center; margin-bottom: 2rem; padding: 2rem; background: white; border-radius: 12px; box-shadow: var(--shadow);">
+      <div class="store-card-logo" style="margin: 0 auto 1rem;">
+        <% if (store.logo) { %>
+          <img src="<%= store.logo %>" alt="<%= store.name %>">
+        <% } else { %>
+          <%= store.name.charAt(0) %>
+        <% } %>
+      </div>
+      <h1 style="margin-bottom: 0.5rem;"><%= store.name %></h1>
+      <p style="color: var(--text-light); max-width: 600px; margin: 0 auto 0.5rem;"><%= store.description || '' %></p>
+      <p style="color: var(--text-muted); font-size: 0.85rem;">by <%= store.owner_name %> · <%= products.length %> products</p>
+    </div>
+
+    <% if (products && products.length > 0) { %>
+    <div class="grid grid-4">
+      <% products.forEach(product => { %>
+        <a href="/product/<%= product.id %>" class="product-card">
+          <div class="product-card-img">
+            <% const imgs = JSON.parse(product.images || '[]'); %>
+            <% if (imgs.length > 0) { %>
+              <img src="<%= imgs[0] %>" alt="<%= product.name %>">
+            <% } else { %>
+              🛍️
+            <% } %>
+          </div>
+          <div class="product-card-body">
+            <div class="product-card-category"><%= product.category || 'General' %></div>
+            <div class="product-card-title"><%= product.name %></div>
+            <div class="product-card-footer">
+              <span class="product-price">PKR <%= product.price.toLocaleString() %></span>
+              <span class="badge <%= product.stock > 0 ? 'badge-success' : 'badge-danger' %>">
+                <%= product.stock > 0 ? 'In Stock' : 'Out of Stock' %>
+              </span>
+            </div>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+    <% } else { %>
+      <div class="empty-state">
+        <div class="icon">📦</div>
+        <h3>No products yet</h3>
+        <p>This store hasn't added any products yet.</p>
+      </div>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials/footer') %>

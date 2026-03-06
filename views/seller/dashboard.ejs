@@ -1,0 +1,87 @@
+<%- include('../partials/header') %>
+<div class="dashboard">
+  <%- include('../partials/seller-sidebar', { active: 'dashboard' }) %>
+  <div class="dashboard-content">
+    <h2 style="margin-bottom: 1.5rem;">📊 Dashboard</h2>
+
+    <% if (!store.approved) { %>
+      <div class="alert alert-warning">
+        ⏳ Your store is pending approval. You can add products but they won't be visible to buyers until approved.
+      </div>
+    <% } %>
+    <% if (!store.registration_paid) { %>
+      <div class="alert alert-info">
+        💰 Registration fee (PKR 5,000) is pending. Please complete payment to activate your store.
+      </div>
+    <% } %>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon green">📦</div>
+        <div class="stat-info">
+          <h3><%= productCount %></h3>
+          <p>Products</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">📋</div>
+        <div class="stat-info">
+          <h3><%= orderCount %></h3>
+          <p>Total Orders</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon gold">💰</div>
+        <div class="stat-info">
+          <h3>PKR <%= totalEarnings.toLocaleString() %></h3>
+          <p>Total Earnings</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon red">⏳</div>
+        <div class="stat-info">
+          <h3><%= pendingOrders %></h3>
+          <p>Pending Orders</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span>Recent Orders</span>
+        <a href="/seller/orders" class="btn btn-sm btn-outline">View All</a>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        <% if (recentOrders && recentOrders.length > 0) { %>
+          <table>
+            <thead>
+              <tr>
+                <th>Order #</th>
+                <th>Buyer</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% recentOrders.forEach(order => { %>
+                <tr>
+                  <td>#<%= order.id %></td>
+                  <td><%= order.buyer_name %></td>
+                  <td>PKR <%= order.total.toLocaleString() %></td>
+                  <td><span class="badge <%= order.status === 'delivered' ? 'badge-success' : order.status === 'cancelled' ? 'badge-danger' : 'badge-warning' %>"><%= order.status %></span></td>
+                  <td><%= new Date(order.created_at).toLocaleDateString() %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        <% } else { %>
+          <div class="empty-state" style="padding: 2rem;">
+            <p>No orders yet</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

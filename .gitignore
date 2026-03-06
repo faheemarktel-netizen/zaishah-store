@@ -1,0 +1,5 @@
+node_modules/
+zaishah.db
+public/uploads/*
+!public/uploads/.gitkeep
+.env

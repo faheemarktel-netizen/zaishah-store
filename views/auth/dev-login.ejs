@@ -1,0 +1,35 @@
+<%- include('../partials/header') %>
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="brand-logo">🔧</div>
+    <h1>Dev Login</h1>
+    <p>Quick login for development and testing</p>
+
+    <form method="POST" action="/auth/dev-login">
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" name="email" class="form-control" placeholder="Enter email..." required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block btn-lg">Login</button>
+    </form>
+
+    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+      <p style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.75rem;">Quick Access:</p>
+      <form method="POST" action="/auth/dev-login" style="margin-bottom: 0.5rem;">
+        <input type="hidden" name="email" value="faheemshaikh466@gmail.com">
+        <button type="submit" class="btn btn-gold btn-block btn-sm">Login as Admin</button>
+      </form>
+      <form method="POST" action="/auth/dev-login" style="margin-bottom: 0.5rem;">
+        <input type="hidden" name="email" value="ali.fashion@example.com">
+        <button type="submit" class="btn btn-outline btn-block btn-sm">Login as Seller (Ali)</button>
+      </form>
+      <form method="POST" action="/auth/dev-login" style="margin-bottom: 0.5rem;">
+        <input type="hidden" name="email" value="buyer@example.com">
+        <button type="submit" class="btn btn-outline btn-block btn-sm">Login as Buyer</button>
+      </form>
+    </div>
+
+    <p style="margin-top: 1rem;"><a href="/auth/login">← Back to Google Login</a></p>
+  </div>
+</div>
+<%- include('../partials/footer') %>

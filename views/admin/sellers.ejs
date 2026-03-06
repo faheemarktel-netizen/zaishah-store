@@ -1,0 +1,61 @@
+<%- include('../partials/header') %>
+<div class="dashboard">
+  <%- include('../partials/admin-sidebar', { active: 'sellers' }) %>
+  <div class="dashboard-content">
+    <h2 style="margin-bottom: 1.5rem;">👥 Manage Sellers</h2>
+
+    <% if (sellers && sellers.length > 0) { %>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Seller</th><th>Email</th><th>Store</th><th>Products</th><th>Earnings</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            <% sellers.forEach(seller => { %>
+              <tr>
+                <td><%= seller.name %></td>
+                <td><%= seller.email %></td>
+                <td><%= seller.store_name || 'No store' %></td>
+                <td><%= seller.product_count || 0 %></td>
+                <td>PKR <%= (seller.total_earnings || 0).toLocaleString() %></td>
+                <td>
+                  <% if (seller.approved) { %>
+                    <span class="badge badge-success">Approved</span>
+                  <% } else if (seller.store_id) { %>
+                    <span class="badge badge-warning">Pending</span>
+                  <% } else { %>
+                    <span class="badge badge-secondary">No Store</span>
+                  <% } %>
+                  <% if (seller.registration_paid) { %>
+                    <span class="badge badge-info">Paid</span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (seller.store_id) { %>
+                    <div class="d-flex gap-1">
+                      <% if (!seller.approved) { %>
+                        <form method="POST" action="/admin/stores/<%= seller.store_id %>/approve" style="display:inline;">
+                          <button class="btn btn-sm btn-success">Approve</button>
+                        </form>
+                      <% } else { %>
+                        <form method="POST" action="/admin/stores/<%= seller.store_id %>/reject" style="display:inline;">
+                          <button class="btn btn-sm btn-danger">Revoke</button>
+                        </form>
+                      <% } %>
+                    </div>
+                  <% } %>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <div class="empty-state">
+        <div class="icon">👥</div>
+        <h3>No sellers yet</h3>
+      </div>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials/footer') %>

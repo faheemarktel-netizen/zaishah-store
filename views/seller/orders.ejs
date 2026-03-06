@@ -1,0 +1,53 @@
+<%- include('../partials/header') %>
+<div class="dashboard">
+  <%- include('../partials/seller-sidebar', { active: 'orders' }) %>
+  <div class="dashboard-content">
+    <h2 style="margin-bottom: 1.5rem;">📋 Orders</h2>
+
+    <% if (orders && orders.length > 0) { %>
+      <% orders.forEach(order => { %>
+        <div class="card mb-2">
+          <div class="card-header">
+            <span>Order #<%= order.id %> — <%= order.buyer_name %> (<%= order.buyer_email %>)</span>
+            <span class="badge <%= order.status === 'delivered' ? 'badge-success' : order.status === 'cancelled' ? 'badge-danger' : 'badge-warning' %>">
+              <%= order.status %>
+            </span>
+          </div>
+          <div class="card-body">
+            <% if (order.items) { order.items.forEach(item => { %>
+              <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid var(--border);">
+                <span><%= item.product_name %> × <%= item.quantity %></span>
+                <span>PKR <%= (item.price * item.quantity).toLocaleString() %></span>
+              </div>
+            <% }); } %>
+            <div style="display: flex; justify-content: space-between; padding-top: 0.75rem; font-weight: 700;">
+              <span>Total</span>
+              <span style="color: var(--primary);">PKR <%= order.total.toLocaleString() %></span>
+            </div>
+            <div style="margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 0.85rem; color: var(--text-light);">Update Status:</span>
+              <% ['confirmed', 'processing', 'shipped', 'delivered'].forEach(status => { %>
+                <% if (status !== order.status) { %>
+                  <form method="POST" action="/seller/orders/<%= order.id %>/status" style="display: inline;">
+                    <input type="hidden" name="status" value="<%= status %>">
+                    <button type="submit" class="btn btn-sm <%= status === 'delivered' ? 'btn-success' : 'btn-outline' %>"><%= status %></button>
+                  </form>
+                <% } %>
+              <% }); %>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
+              <%= new Date(order.created_at).toLocaleString() %>
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    <% } else { %>
+      <div class="empty-state">
+        <div class="icon">📋</div>
+        <h3>No orders yet</h3>
+        <p>Orders will appear here when buyers purchase your products.</p>
+      </div>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials/footer') %>

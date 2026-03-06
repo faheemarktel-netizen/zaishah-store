@@ -1,0 +1,76 @@
+<%- include('../partials/header') %>
+
+<section class="auth-page">
+  <div class="container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1>🏪 Welcome to <span class="gold">Zaishah</span> Store</h1>
+        <p>Sign in with Google to create or manage your store</p>
+      </div>
+
+      <div class="auth-body">
+        <!-- Google Sign In Button -->
+        <div id="google-signin-btn" style="display: flex; justify-content: center; margin: 2rem 0;">
+          <div id="g_id_onload"
+            data-client_id="<%= googleClientId %>"
+            data-callback="handleGoogleLogin"
+            data-auto_prompt="false">
+          </div>
+          <div class="g_id_signin"
+            data-type="standard"
+            data-size="large"
+            data-theme="outline"
+            data-text="sign_in_with"
+            data-shape="rectangular"
+            data-logo_alignment="left"
+            data-width="300">
+          </div>
+        </div>
+
+        <% if (googleClientId === 'GOOGLE_CLIENT_ID') { %>
+          <div class="demo-notice">
+            <p>⚠️ Google OAuth not configured yet. Use dev login for testing:</p>
+            <a href="/auth/dev-login" class="btn btn-outline" style="margin-top: 1rem;">Dev Login →</a>
+          </div>
+        <% } %>
+
+        <div class="auth-features">
+          <div class="auth-feature">
+            <span>✅</span> One-time PKR 5,000 registration
+          </div>
+          <div class="auth-feature">
+            <span>✅</span> Your own branded storefront
+          </div>
+          <div class="auth-feature">
+            <span>✅</span> Unlimited products
+          </div>
+          <div class="auth-feature">
+            <span>✅</span> Accept card payments
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+function handleGoogleLogin(response) {
+  fetch('/auth/google/callback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ credential: response.credential })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      window.location.href = data.redirect || '/seller/setup';
+    } else {
+      alert('Login failed. Please try again.');
+    }
+  })
+  .catch(() => alert('Login failed. Please try again.'));
+}
+</script>
+
+<%- include('../partials/footer') %>

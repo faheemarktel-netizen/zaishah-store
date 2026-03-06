@@ -1,0 +1,46 @@
+<%- include('../partials/header') %>
+<div class="dashboard">
+  <%- include('../partials/admin-sidebar', { active: 'payouts' }) %>
+  <div class="dashboard-content">
+    <h2 style="margin-bottom: 1.5rem;">💸 Manage Payouts</h2>
+    <% if (payouts && payouts.length > 0) { %>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Store</th><th>Seller Email</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody>
+            <% payouts.forEach(p => { %>
+              <tr>
+                <td>#<%= p.id %></td>
+                <td><%= p.store_name %></td>
+                <td><%= p.seller_email %></td>
+                <td>PKR <%= p.amount.toLocaleString() %></td>
+                <td><%= p.method || 'Bank' %></td>
+                <td><span class="badge <%= p.status === 'paid' ? 'badge-success' : p.status === 'rejected' ? 'badge-danger' : p.status === 'approved' ? 'badge-info' : 'badge-warning' %>"><%= p.status %></span></td>
+                <td><%= new Date(p.created_at).toLocaleDateString() %></td>
+                <td>
+                  <div class="d-flex gap-1">
+                    <% if (p.status === 'pending') { %>
+                      <form method="POST" action="/admin/payouts/<%= p.id %>/approve" style="display:inline;">
+                        <button class="btn btn-sm btn-success">Approve</button>
+                      </form>
+                      <form method="POST" action="/admin/payouts/<%= p.id %>/reject" style="display:inline;">
+                        <button class="btn btn-sm btn-danger">Reject</button>
+                      </form>
+                    <% } else if (p.status === 'approved') { %>
+                      <form method="POST" action="/admin/payouts/<%= p.id %>/pay" style="display:inline;">
+                        <button class="btn btn-sm btn-gold">Mark Paid</button>
+                      </form>
+                    <% } %>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <div class="empty-state"><div class="icon">💸</div><h3>No payout requests</h3></div>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials/footer') %>

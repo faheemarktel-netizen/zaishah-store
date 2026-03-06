@@ -1,0 +1,132 @@
+<%- include('../partials/header') %>
+<div class="dashboard">
+  <%- include('../partials/admin-sidebar', { active: 'dashboard' }) %>
+  <div class="dashboard-content">
+    <h2 style="margin-bottom: 1.5rem;">📊 Admin Dashboard</h2>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon green">👥</div>
+        <div class="stat-info">
+          <h3><%= totalSellers %></h3>
+          <p>Sellers</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">🛒</div>
+        <div class="stat-info">
+          <h3><%= totalBuyers %></h3>
+          <p>Buyers</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon gold">📦</div>
+        <div class="stat-info">
+          <h3><%= totalProducts %></h3>
+          <p>Products</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon red">📋</div>
+        <div class="stat-info">
+          <h3><%= totalOrders %></h3>
+          <p>Orders</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon gold">💰</div>
+        <div class="stat-info">
+          <h3>PKR <%= totalRevenue.toLocaleString() %></h3>
+          <p>Total Service Fees Collected</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon red">⏳</div>
+        <div class="stat-info">
+          <h3>PKR <%= pendingPayouts.toLocaleString() %></h3>
+          <p>Pending Payouts</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">🏪</div>
+        <div class="stat-info">
+          <h3><%= pendingStores %></h3>
+          <p>Pending Store Approvals</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payout Accounts -->
+    <div class="card mb-2">
+      <div class="card-header">🏦 Admin Payout Accounts</div>
+      <div class="card-body">
+        <div class="payout-accounts">
+          <div class="payout-account">
+            <h4>📊 Google AdSense</h4>
+            <div class="value"><%= payoutAccounts.adsense %></div>
+          </div>
+          <div class="payout-account">
+            <h4>📱 JazzCash</h4>
+            <div class="value"><%= payoutAccounts.jazzcash %></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Platform Pricing -->
+    <div class="card mb-2">
+      <div class="card-header">💵 Platform Pricing Model</div>
+      <div class="card-body">
+        <div class="payout-accounts">
+          <div class="payout-account">
+            <h4>Seller Registration</h4>
+            <div class="value">PKR 5,000 (one-time)</div>
+          </div>
+          <div class="payout-account">
+            <h4>Per-Order Service Fee</h4>
+            <div class="value">PKR 50 (auto-deducted)</div>
+          </div>
+          <div class="payout-account">
+            <h4>Monthly Fee</h4>
+            <div class="value" style="color: var(--success);">None - Free!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="card">
+      <div class="card-header">
+        <span>Recent Orders</span>
+        <a href="/admin/orders" class="btn btn-sm btn-outline">View All</a>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        <% if (recentOrders && recentOrders.length > 0) { %>
+          <table>
+            <thead>
+              <tr><th>#</th><th>Buyer</th><th>Store</th><th>Total</th><th>Status</th><th>Date</th></tr>
+            </thead>
+            <tbody>
+              <% recentOrders.forEach(order => { %>
+                <tr>
+                  <td>#<%= order.id %></td>
+                  <td><%= order.buyer_name %></td>
+                  <td><%= order.store_name %></td>
+                  <td>PKR <%= order.total.toLocaleString() %></td>
+                  <td><span class="badge <%= order.status === 'delivered' ? 'badge-success' : 'badge-warning' %>"><%= order.status %></span></td>
+                  <td><%= new Date(order.created_at).toLocaleDateString() %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        <% } else { %>
+          <div class="empty-state" style="padding: 2rem;"><p>No orders yet</p></div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

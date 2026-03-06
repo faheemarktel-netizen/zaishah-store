@@ -1,0 +1,37 @@
+<%- include('../partials/header') %>
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="brand-logo">🎯</div>
+    <h1>Choose Your Role</h1>
+    <p>Welcome, <%= user.name %>! How would you like to use Zaishah Store?</p>
+
+    <form method="POST" action="/auth/set-role" id="roleForm">
+      <input type="hidden" name="role" id="roleInput" value="">
+      
+      <div class="role-cards">
+        <div class="role-card" onclick="selectRole('buyer')">
+          <div class="icon">🛒</div>
+          <h3>Buyer</h3>
+          <p>Shop amazing products from Pakistani sellers</p>
+        </div>
+        <div class="role-card" onclick="selectRole('seller')">
+          <div class="icon">🏪</div>
+          <h3>Seller</h3>
+          <p>Open your store and start selling<br><small style="color: var(--gold-dark);">PKR 5,000 registration fee</small></p>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg" id="continueBtn" disabled>Continue</button>
+    </form>
+  </div>
+</div>
+
+<script>
+function selectRole(role) {
+  document.getElementById('roleInput').value = role;
+  document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  document.getElementById('continueBtn').disabled = false;
+}
+</script>
+<%- include('../partials/footer') %>

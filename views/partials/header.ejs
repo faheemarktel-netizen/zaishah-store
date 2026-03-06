@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : 'Zaishah Store' %></title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏪</text></svg>">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="navbar-brand">
+      <span class="brand-icon">🏪</span>
+      <span><span class="gold">Zaishah</span> Store</span>
+    </a>
+
+    <ul class="navbar-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="/#pricing">Pricing</a></li>
+    </ul>
+
+    <div class="navbar-actions">
+      <% if (typeof user !== 'undefined' && user) { %>
+        <div class="dropdown">
+          <div class="user-menu">
+            <% if (user.avatar) { %>
+              <img src="<%= user.avatar %>" alt="<%= user.name %>" class="user-avatar">
+            <% } else { %>
+              <div class="user-avatar-placeholder"><%= user.name ? user.name.charAt(0).toUpperCase() : '?' %></div>
+            <% } %>
+            <span style="color: white; font-size: 0.85rem;"><%= user.name %></span>
+          </div>
+          <div class="dropdown-content">
+            <% if (user.role === 'admin') { %>
+              <a href="/admin">📊 Admin Panel</a>
+            <% } %>
+            <% if (user.role === 'seller') { %>
+              <a href="/seller/dashboard">📦 Dashboard</a>
+              <a href="/seller/products">🏷️ My Products</a>
+              <a href="/seller/orders">📋 Orders</a>
+              <a href="/seller/earnings">💰 Earnings</a>
+            <% } else if (user.role !== 'admin') { %>
+              <a href="/seller/setup">🏪 Start Selling</a>
+            <% } %>
+            <a href="/auth/logout" class="danger">🚪 Logout</a>
+          </div>
+        </div>
+      <% } else { %>
+        <a href="/auth/login" class="btn btn-gold btn-sm">Sign In with Google</a>
+      <% } %>
+
+      <button class="hamburger" onclick="document.querySelector('.navbar-links').classList.toggle('show')">☰</button>
+    </div>
+  </nav>

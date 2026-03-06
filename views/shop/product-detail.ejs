@@ -1,0 +1,124 @@
+<%- include('../partials/header') %>
+<div class="main-content">
+  <div class="container">
+    <div class="product-detail">
+      <div class="product-gallery">
+        <% const imgs = JSON.parse(product.images || '[]'); %>
+        <% if (imgs.length > 0) { %>
+          <img src="<%= imgs[0] %>" alt="<%= product.name %>">
+        <% } else { %>
+          🛍️
+        <% } %>
+      </div>
+      <div class="product-info">
+        <div class="product-card-category" style="margin-bottom: 0.5rem;"><%= product.category || 'General' %></div>
+        <h1><%= product.name %></h1>
+        <a href="/store/<%= product.store_slug %>" class="store-link">🏪 <%= product.store_name %></a>
+        <div class="price">PKR <%= product.price.toLocaleString() %></div>
+        
+        <div class="no-cod-notice" style="margin-bottom: 1rem;">
+          <span class="icon">💳</span>
+          <div><strong>Card Payment Only</strong> — No Cash on Delivery</div>
+        </div>
+
+        <div class="stock <%= product.stock > 0 ? 'in-stock' : 'out-of-stock' %>">
+          <% if (product.stock > 0) { %>
+            ✅ In Stock (<%= product.stock %> available)
+          <% } else { %>
+            ❌ Out of Stock
+          <% } %>
+        </div>
+
+        <div class="description"><%= product.description %></div>
+
+        <% if (product.stock > 0) { %>
+          <div class="quantity-control">
+            <button type="button" onclick="changeQty(-1)">−</button>
+            <input type="number" id="quantity" value="1" min="1" max="<%= product.stock %>" readonly>
+            <button type="button" onclick="changeQty(1)">+</button>
+          </div>
+          <button class="btn btn-primary btn-lg btn-block" onclick="addToCart(<%= product.id %>)">
+            🛒 Add to Cart
+          </button>
+          <div id="cart-message" style="margin-top: 0.75rem; display: none;" class="alert alert-success">Added to cart!</div>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (relatedProducts && relatedProducts.length > 0) { %>
+    <div class="section" style="margin-top: 3rem;">
+      <div class="section-header">
+        <h2>More from this Store</h2>
+        <a href="/store/<%= product.store_slug %>">View All →</a>
+      </div>
+      <div class="grid grid-4">
+        <% relatedProducts.forEach(rp => { %>
+          <a href="/product/<%= rp.id %>" class="product-card">
+            <div class="product-card-img">
+              <% const ri = JSON.parse(rp.images || '[]'); %>
+              <% if (ri.length > 0) { %>
+                <img src="<%= ri[0] %>" alt="<%= rp.name %>">
+              <% } else { %>
+                🛍️
+              <% } %>
+            </div>
+            <div class="product-card-body">
+              <div class="product-card-title"><%= rp.name %></div>
+              <div class="product-card-footer">
+                <span class="product-price">PKR <%= rp.price.toLocaleString() %></span>
+              </div>
+            </div>
+          </a>
+        <% }); %>
+      </div>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<script>
+function changeQty(delta) {
+  const input = document.getElementById('quantity');
+  const newVal = parseInt(input.value) + delta;
+  if (newVal >= 1 && newVal <= parseInt(input.max)) {
+    input.value = newVal;
+  }
+}
+
+function addToCart(productId) {
+  const quantity = document.getElementById('quantity').value;
+  fetch('/cart/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId, quantity: parseInt(quantity) })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      const msg = document.getElementById('cart-message');
+      msg.style.display = 'block';
+      // Update cart badge
+      const badge = document.querySelector('.cart-badge');
+      if (badge) {
+        badge.textContent = data.cartCount;
+      } else {
+        const cartIcon = document.querySelector('.cart-icon');
+        if (cartIcon) {
+          const newBadge = document.createElement('span');
+          newBadge.className = 'cart-badge';
+          newBadge.textContent = data.cartCount;
+          cartIcon.appendChild(newBadge);
+        }
+      }
+      setTimeout(() => { msg.style.display = 'none'; }, 3000);
+    } else {
+      alert(data.error || 'Failed to add to cart. Please login first.');
+    }
+  })
+  .catch(() => {
+    window.location.href = '/auth/login';
+  });
+}
+</script>
+
+<%- include('../partials/footer') %>

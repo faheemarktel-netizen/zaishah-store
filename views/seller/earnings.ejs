@@ -1,0 +1,113 @@
+<%- include('../partials/header') %>
+<div class="dashboard">
+  <%- include('../partials/seller-sidebar', { active: 'earnings' }) %>
+  <div class="dashboard-content">
+    <h2 style="margin-bottom: 1.5rem;">💰 Earnings & Payouts</h2>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon gold">💰</div>
+        <div class="stat-info">
+          <h3>PKR <%= totalEarnings.toLocaleString() %></h3>
+          <p>Total Earnings</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon red">📊</div>
+        <div class="stat-info">
+          <h3>PKR <%= totalFees.toLocaleString() %></h3>
+          <p>Service Fees Paid</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">✅</div>
+        <div class="stat-info">
+          <h3>PKR <%= totalPaid.toLocaleString() %></h3>
+          <p>Total Paid Out</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">💵</div>
+        <div class="stat-info">
+          <h3>PKR <%= availableBalance.toLocaleString() %></h3>
+          <p>Available Balance</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Request Payout -->
+    <% if (availableBalance > 0) { %>
+    <div class="card mb-2">
+      <div class="card-header">💸 Request Payout</div>
+      <div class="card-body">
+        <form method="POST" action="/seller/payout-request" style="display: flex; gap: 1rem; align-items: end; flex-wrap: wrap;">
+          <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+            <label>Amount (PKR)</label>
+            <input type="number" name="amount" class="form-control" min="100" max="<%= availableBalance %>" required placeholder="Enter amount">
+          </div>
+          <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
+            <label>Payout Method</label>
+            <select name="method" class="form-control">
+              <option value="bank_transfer">Bank Transfer</option>
+              <option value="jazzcash">JazzCash</option>
+              <option value="easypaisa">EasyPaisa</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-gold">Request Payout</button>
+        </form>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- Payout History -->
+    <div class="card mb-2">
+      <div class="card-header">📜 Payout History</div>
+      <div class="card-body" style="padding: 0;">
+        <% if (payouts && payouts.length > 0) { %>
+          <table>
+            <thead><tr><th>ID</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody>
+              <% payouts.forEach(p => { %>
+                <tr>
+                  <td>#<%= p.id %></td>
+                  <td>PKR <%= p.amount.toLocaleString() %></td>
+                  <td><%= p.method || 'Bank' %></td>
+                  <td><span class="badge <%= p.status === 'paid' ? 'badge-success' : p.status === 'rejected' ? 'badge-danger' : 'badge-warning' %>"><%= p.status %></span></td>
+                  <td><%= new Date(p.created_at).toLocaleDateString() %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        <% } else { %>
+          <div class="empty-state" style="padding: 2rem;"><p>No payout requests yet</p></div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Earnings Log -->
+    <div class="card">
+      <div class="card-header">📈 Earnings Log</div>
+      <div class="card-body" style="padding: 0;">
+        <% if (earnings && earnings.length > 0) { %>
+          <table>
+            <thead><tr><th>Order</th><th>Gross</th><th>Service Fee</th><th>Net</th><th>Date</th></tr></thead>
+            <tbody>
+              <% earnings.forEach(e => { %>
+                <tr>
+                  <td>#<%= e.order_id %></td>
+                  <td>PKR <%= e.amount.toLocaleString() %></td>
+                  <td style="color: var(--danger);">-PKR <%= e.service_fee %></td>
+                  <td style="color: var(--primary); font-weight: 700;">PKR <%= e.net_amount.toLocaleString() %></td>
+                  <td><%= new Date(e.created_at).toLocaleDateString() %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        <% } else { %>
+          <div class="empty-state" style="padding: 2rem;"><p>No earnings yet</p></div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

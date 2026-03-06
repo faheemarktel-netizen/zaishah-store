@@ -1,0 +1,51 @@
+<%- include('../partials/header') %>
+<div class="main-content">
+  <div class="container">
+    <div class="section-header">
+      <h2>🔍 <%= query ? 'Results for "' + query + '"' : 'All Products' %></h2>
+    </div>
+
+    <div class="categories">
+      <a href="/search<%= query ? '?q=' + encodeURIComponent(query) : '' %>" class="category-tag <%= !category ? 'active' : '' %>">All</a>
+      <% if (categories) { categories.forEach(cat => { %>
+        <a href="/search?<%= query ? 'q=' + encodeURIComponent(query) + '&' : '' %>category=<%= encodeURIComponent(cat.category) %>" 
+           class="category-tag <%= category === cat.category ? 'active' : '' %>">
+          <%= cat.category %>
+        </a>
+      <% }); } %>
+    </div>
+
+    <% if (products && products.length > 0) { %>
+    <div class="grid grid-4">
+      <% products.forEach(product => { %>
+        <a href="/product/<%= product.id %>" class="product-card">
+          <div class="product-card-img">
+            <% const imgs = JSON.parse(product.images || '[]'); %>
+            <% if (imgs.length > 0) { %>
+              <img src="<%= imgs[0] %>" alt="<%= product.name %>">
+            <% } else { %>
+              🛍️
+            <% } %>
+          </div>
+          <div class="product-card-body">
+            <div class="product-card-category"><%= product.category || 'General' %></div>
+            <div class="product-card-title"><%= product.name %></div>
+            <div class="product-card-store">by <%= product.store_name %></div>
+            <div class="product-card-footer">
+              <span class="product-price">PKR <%= product.price.toLocaleString() %></span>
+            </div>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+    <% } else { %>
+      <div class="empty-state">
+        <div class="icon">🔍</div>
+        <h3>No products found</h3>
+        <p>Try a different search or browse our categories.</p>
+        <a href="/search" class="btn btn-primary">Browse All</a>
+      </div>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials/footer') %>

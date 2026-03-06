@@ -1,0 +1,12 @@
+<%- include('partials/header') %>
+<div class="main-content">
+  <div class="container">
+    <div class="empty-state">
+      <div class="icon">😕</div>
+      <h3><%= typeof title !== 'undefined' ? title : 'Error' %></h3>
+      <p><%= typeof message !== 'undefined' ? message : 'Something went wrong.' %></p>
+      <a href="/" class="btn btn-primary">Go Home</a>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>

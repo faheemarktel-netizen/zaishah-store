@@ -1,0 +1,34 @@
+<%- include('../partials/header') %>
+<div class="main-content">
+  <div class="container">
+    <div class="section-header">
+      <h2>🏪 All Stores</h2>
+    </div>
+    <% if (stores && stores.length > 0) { %>
+    <div class="grid grid-3">
+      <% stores.forEach(store => { %>
+        <a href="/store/<%= store.slug %>" class="store-card">
+          <div class="store-card-logo">
+            <% if (store.logo) { %>
+              <img src="<%= store.logo %>" alt="<%= store.name %>">
+            <% } else { %>
+              <%= store.name.charAt(0) %>
+            <% } %>
+          </div>
+          <h3><%= store.name %></h3>
+          <p><%= store.description || 'A great store on Zaishah' %></p>
+          <span class="badge badge-primary"><%= store.product_count %> products</span>
+        </a>
+      <% }); %>
+    </div>
+    <% } else { %>
+      <div class="empty-state">
+        <div class="icon">🏪</div>
+        <h3>No stores yet</h3>
+        <p>Be the first to open a store on Zaishah!</p>
+        <a href="/auth/login" class="btn btn-primary">Become a Seller</a>
+      </div>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials/footer') %>

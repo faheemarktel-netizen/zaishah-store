@@ -1,0 +1,60 @@
+<%- include('../partials/header') %>
+<div class="dashboard">
+  <%- include('../partials/seller-sidebar', { active: 'products' }) %>
+  <div class="dashboard-content">
+    <div class="section-header">
+      <h2>🏷️ My Products</h2>
+      <a href="/seller/products/add" class="btn btn-primary">+ Add Product</a>
+    </div>
+
+    <% if (products && products.length > 0) { %>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% products.forEach(product => { %>
+              <tr>
+                <td style="max-width: 250px;">
+                  <strong><%= product.name %></strong>
+                </td>
+                <td><%= product.category || '—' %></td>
+                <td>PKR <%= product.price.toLocaleString() %></td>
+                <td><%= product.stock %></td>
+                <td>
+                  <span class="badge <%= product.active ? 'badge-success' : 'badge-secondary' %>">
+                    <%= product.active ? 'Active' : 'Inactive' %>
+                  </span>
+                </td>
+                <td>
+                  <div class="d-flex gap-1">
+                    <a href="/seller/products/edit/<%= product.id %>" class="btn btn-sm btn-outline">Edit</a>
+                    <form method="POST" action="/seller/products/delete/<%= product.id %>" onsubmit="return confirm('Delete this product?');" style="display: inline;">
+                      <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <div class="empty-state">
+        <div class="icon">📦</div>
+        <h3>No products yet</h3>
+        <p>Start adding products to your store!</p>
+        <a href="/seller/products/add" class="btn btn-primary">Add First Product</a>
+      </div>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials/footer') %>
