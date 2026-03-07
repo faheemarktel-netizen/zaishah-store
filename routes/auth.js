@@ -84,29 +84,36 @@ router.post('/google/callback', async (req, res) => {
   }
 });
 
-// Dev login (for testing without Google OAuth configured)
+// Admin login (password protected)
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Zaishah@2026#Admin';
+
 router.get('/dev-login', (req, res) => {
-  res.render('auth/dev-login', { title: 'Dev Login - Zaishah Store' });
+  res.render('auth/dev-login', { title: 'Admin Login - Zaishah Store' });
 });
 
 router.post('/dev-login', (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.redirect('/auth/dev-login');
+  const { email, adminPassword } = req.body;
+  if (!email || !adminPassword) return res.redirect('/auth/dev-login');
+  
+  // Verify admin password
+  if (adminPassword !== ADMIN_PASSWORD) {
+    return res.render('auth/dev-login', { title: 'Admin Login - Zaishah Store', error: 'Invalid password.' });
+  }
+
+  // Only allow admin email
+  if (email !== 'faheemshaikh466@gmail.com') {
+    return res.render('auth/dev-login', { title: 'Admin Login - Zaishah Store', error: 'Unauthorized email.' });
+  }
   
   let user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
   if (!user) {
-    const name = email.split('@')[0];
-    const role = email === 'faheemshaikh466@gmail.com' ? 'admin' : 'seller';
     db.prepare('INSERT INTO users (email, name, role, google_id) VALUES (?, ?, ?, ?)')
-      .run(email, name, role, 'dev_' + Date.now());
+      .run(email, 'Faheem Shaikh', 'admin', 'admin_' + Date.now());
     user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
   }
   
   req.session.userId = user.id;
-  
-  if (user.role === 'admin') return res.redirect('/admin');
-  const store = db.prepare('SELECT * FROM stores WHERE user_id = ?').get(user.id);
-  return res.redirect(store ? '/seller/dashboard' : '/seller/setup');
+  return res.redirect('/admin');
 });
 
 // Logout
